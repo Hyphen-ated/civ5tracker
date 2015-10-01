@@ -1,4 +1,4 @@
-import json, atexit
+import json, atexit, sqlite3, os
 from Tkinter import *
 
 class Tracker:
@@ -6,6 +6,13 @@ class Tracker:
     var = None
     poll_delay = 5000
     root = Tk()
+    dbpath = os.environ['USERPROFILE'] + "/Documents/My Games/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+    last_turn = -1
+    policies = [None] * 111
+    wonders = [None] * 111
+    beliefs = [None] * 111
+
+
 
     def load_options(self):
         with open("options.json", "r") as json_file:
@@ -17,6 +24,12 @@ class Tracker:
 
         with open("options.json", "w") as json_file:
             json.dump(self.options, json_file, indent=3, sort_keys=True)
+
+    def load_definitions(self, *args):
+        mod = self.var.get()
+        with open("definitions-" + mod + ".json", "r") as json_file:
+            definitions = json.load(json_file)
+            #todo: populate policies, wonders, beliefs
 
 
     def run(self):
@@ -32,14 +45,37 @@ class Tracker:
         # "mod-select":"bnw"
         Radiobutton( self.root, text="Vanilla Brave New World", variable=self.var, value="bnw").pack(anchor=CENTER)
         Radiobutton( self.root, text="No Quitters Mod", variable=self.var, value="nqmod").pack(anchor=CENTER)
+        self.var.trace("w", self.load_definitions)
+        self.load_definitions()
 
         self.poll_database()
         mainloop()
 
 
     def poll_database(self):
-        print("yeah")
         self.root.after(self.poll_delay, self.poll_database)
+
+        conn = sqlite3.connect(self.dbpath)
+        c = conn.cursor()
+
+        c.execute("SELECT Value FROM SimpleValues WHERE Name='turn'")
+        turn = c.fetchone()
+        # if the turn didnt change, then we dont need to do any more until the next poll
+        if turn == self.last_turn:
+            return
+
+        self.last_turn = turn
+        c.execute("SELECT Value FROM SimpleValues WHERE Name='buildings'")
+        building_ids = c.fetchone()
+
+        c.execute("SELECT Value FROM SimpleValues WHERE Name='policies'")
+        policy_ids = c.fetchone()
+
+        c.execute("SELECT Value FROM SimpleValues WHERE Name='religion'")
+        belief_ids = c.fetchone()
+
+        #todo: format the info
+
 
 
 
