@@ -3,7 +3,7 @@ from Tkinter import *
 
 class Tracker:
     options = {}
-    var = None
+    mod_select_var = None
     poll_delay = 5000
     root = Tk()
     dbpath = os.environ['USERPROFILE'] + "/Documents/My Games/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
@@ -20,13 +20,13 @@ class Tracker:
         self.poll_delay = self.options["poll_delay"]
 
     def save_options(self):
-        self.options["mod-select"] = self.var.get()
+        self.options["mod-select"] = self.mod_select_var.get()
 
         with open("options.json", "w") as json_file:
             json.dump(self.options, json_file, indent=3, sort_keys=True)
 
     def load_definitions(self, *args):
-        mod = self.var.get()
+        mod = self.mod_select_var.get()
         with open("definitions-" + mod + ".json", "r") as json_file:
             definitions = json.load(json_file)
             #todo: populate policies, wonders, beliefs
@@ -41,11 +41,11 @@ class Tracker:
         self.load_options()
 
 
-        self.var = StringVar(name="mod-select", value=self.options.get("mod-select"))
+        self.mod_select_var = StringVar(name="mod-select", value=self.options.get("mod-select"))
         # "mod-select":"bnw"
-        Radiobutton( self.root, text="Vanilla Brave New World", variable=self.var, value="bnw").pack(anchor=CENTER)
-        Radiobutton( self.root, text="No Quitters Mod", variable=self.var, value="nqmod").pack(anchor=CENTER)
-        self.var.trace("w", self.load_definitions)
+        Radiobutton( self.root, text="Vanilla Brave New World", variable=self.mod_select_var, value="bnw").pack(anchor=CENTER)
+        Radiobutton( self.root, text="No Quitters Mod", variable=self.mod_select_var, value="nqmod").pack(anchor=CENTER)
+        self.mod_select_var.trace("w", self.load_definitions)
         self.load_definitions()
 
         self.poll_database()
