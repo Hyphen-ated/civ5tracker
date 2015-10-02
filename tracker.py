@@ -14,6 +14,7 @@ class Tracker:
         self.last_turn = -1
         self.policyNames = [None] * 111
         self.policyTrees = [None] * 111
+        self.policyRootIds = []
         self.buildingNames = [None] * 162
         self.wondersById = [False] * 162
         self.beliefNames = [None] * 69
@@ -38,6 +39,8 @@ class Tracker:
                     effectiveKey = str(key)
                 for policyId in value:
                     self.policyTrees[policyId] = effectiveKey
+            for ID in definitions["policy-root-ids"]:
+                self.policyRootIds.append(int(ID))
 
         self.log("Connecting to database to load localized names")
         conn = sqlite3.connect(self.dbpath)
@@ -167,7 +170,7 @@ class Tracker:
             for policy_id in str(policy_ids[0]).split(" "):
                 ID = int(policy_id)
                 tree_root = self.policyTrees[ID]
-                if tree_root or ID in self.policyTrees:
+                if tree_root or ID in self.policyRootIds:
 
                     if tree_root in policy_tree_sizes:
                         policy_tree_sizes[tree_root] += 1
@@ -175,13 +178,13 @@ class Tracker:
                         if tree_root:
                             policy_tree_sizes[tree_root] = 1
                         else:
-                            policy_tree_sizes[tree_root] = 0
+                            policy_tree_sizes[str(ID)] = 0
 
 
 
         policy_output = []
         for tree_root in policy_tree_sizes:
-            if tree_root.isdigit():
+            if str(tree_root).isdigit():
                 policy_output.append(self.policyNames[int(tree_root)] + " " + str(policy_tree_sizes[tree_root]))
             else:
                 # its an ideology
