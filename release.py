@@ -10,10 +10,9 @@ if os.path.isdir('target/'):
     shutil.rmtree('target/')
 installDir = 'target/' + installName + '/'
 
-# then build the option builder using normal py2exe
 sys.argv.append('py2exe')
 setup(
-    options = {'py2exe': {'bundle_files': 1, 'compressed': True}},
+    options = {'py2exe': {'bundle_files': 3, 'compressed': True}},
     windows = [{'script': "tracker.py"}],
     zipfile = None,
 )
@@ -21,7 +20,8 @@ setup(
 
 shutil.copytree('output files reference/', installDir + 'output files/')
 
-shutil.copy('dist/tracker.exe', installDir)
+shutil.copytree('dist/', installDir + "dist/")
+shutil.copy('shortcut.lnk', installDir + "Run Civ 5 Tracker.lnk")
 shutil.copy('options.json', installDir)
 shutil.copy('definitions-bnw.json', installDir)
 shutil.copy('definitions-nqmod.json', installDir)

@@ -165,6 +165,9 @@ class Tracker:
         with open(self.religion_file, "w") as f:
             f.write(", ".join(belief_names))
 
+        # count how many policies are in each branch, so we get stuff like "Honor 0, Liberty 3"
+        # its confusing because of the way the root is itself a policy but it doesnt have itself as a parent
+        # and ideologies having no policy for their root makes it annoying to do a different way
         policy_tree_sizes = {}
         if policy_ids and policy_ids[0]:
             for policy_id in str(policy_ids[0]).split(" "):
