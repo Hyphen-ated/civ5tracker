@@ -185,7 +185,7 @@ class Tracker:
                 policy_output.append(self.policyNames[int(tree_root)] + " " + str(policy_tree_sizes[tree_root]))
             else:
                 # its an ideology
-                policy_output.append(tree_root + policy_tree_sizes[tree_root])
+                policy_output.append(tree_root + " " + str(policy_tree_sizes[tree_root]))
         with open(self.policies_file, "w") as f:
             f.write(", ".join(policy_output))
 

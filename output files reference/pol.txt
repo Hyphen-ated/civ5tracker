@@ -1,1 +1,1 @@
-Liberty(2), Honor(0) (example)
+Liberty 2, Honor 0 (example)
