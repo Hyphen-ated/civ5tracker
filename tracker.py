@@ -153,13 +153,16 @@ class Tracker:
             f.write(", ".join(wonder_names))
 
         belief_names = []
+        # sometimes there are two copies of a belief in there, so only show each once
+        beliefs_seen_already = {}
         if belief_ids and belief_ids[0]:
             for belief_id in str(belief_ids[0]).split(" "):
                 ID = int(belief_id)
-                if ID >= 0:
+                if ID >= 0 and ID not in beliefs_seen_already:
                     name = self.beliefNames[ID]
                     if name:
                         belief_names.append(name)
+                        beliefs_seen_already[ID] = True
         if len(belief_names) == 0:
             belief_names.append("none")
         with open(self.religion_file, "w") as f:
