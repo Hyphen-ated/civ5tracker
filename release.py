@@ -12,16 +12,19 @@ installDir = 'target/' + installName + '/'
 
 # then build the option builder using normal py2exe
 sys.argv.append('py2exe')
-setup(windows=['tracker.pyw'])
+setup(
+    options = {'py2exe': {'bundle_files': 1, 'compressed': True}},
+    windows = [{'script': "tracker.py"}],
+    zipfile = None,
+)
 
-shutil.copytree('dist/', installDir)
+
 shutil.copytree('output files reference/', installDir + 'output files/')
 
+shutil.copy('dist/tracker.exe', installDir)
 shutil.copy('options.json', installDir)
 shutil.copy('definitions-bnw.json', installDir)
 shutil.copy('definitions-nqmod.json', installDir)
 shutil.copy('LICENSE.txt', installDir)
 shutil.copy('README.md', installDir + 'README.txt')
-with open(installDir + "version.txt", 'w') as f:
-    f.write(version)
 shutil.make_archive("target/" + installName, "zip", 'target', installName + "/")
