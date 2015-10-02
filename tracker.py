@@ -1,5 +1,6 @@
 import json, atexit, sqlite3, os
 from Tkinter import *
+from sys import platform as _platform
 
 class Tracker:
     def __init__(self):
@@ -7,10 +8,24 @@ class Tracker:
         self.mod = "bnw"
         self.poll_delay = 5000
         self.root = Tk()
-        self.dbpath = os.environ['USERPROFILE'] + "/Documents/My Games/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
-        self.wonders_file = 'output files/wonders.txt'
-        self.policies_file = 'output files/pol.txt'
-        self.religion_file = 'output files/rel.txt'
+        
+        if _platform == 'win32':
+            self.dbpath = os.environ['USERPROFILE'] + "/Documents/My Games/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+        elif _platform == 'darwin':
+            self.dbpath = os.environ['HOME'] + "/Documents/Aspyr/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+        else:
+            # UNTESTED, LINUX
+            self.dbpath = os.environ['HOME'] + "/.local/share/Aspyr/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+
+        output_dir = 'output files'
+        
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            
+        self.wonders_file = output_dir + '/wonders.txt'
+        self.policies_file = output_dir + '/pol.txt'
+        self.religion_file = output_dir + '/rel.txt'
+        
         self.last_turn = -1
         self.policyNames = [None] * 111
         self.policyTrees = [None] * 111
