@@ -8,14 +8,17 @@ class Tracker:
         self.mod = "bnw"
         self.poll_delay = 5000
         self.root = Tk()
-        
+
+
         if _platform == 'win32':
-            self.dbpath = os.environ['USERPROFILE'] + "/Documents/My Games/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+            self.dbdir = os.environ['USERPROFILE'] + "/Documents/My Games/Sid Meier's Civilization 5/ModUserData/"
         elif _platform == 'darwin':
-            self.dbpath = os.environ['HOME'] + "/Documents/Aspyr/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+            self.dbdir = os.environ['HOME'] + "/Documents/Aspyr/Sid Meier's Civilization 5/ModUserData/"
         else:
             # UNTESTED, LINUX
-            self.dbpath = os.environ['HOME'] + "/.local/share/Aspyr/Sid Meier's Civilization 5/ModUserData/exported streaming info-1.db"
+            self.dbdir = os.environ['HOME'] + "/.local/share/Aspyr/Sid Meier's Civilization 5/ModUserData/"
+        self.dbpath = ""
+        self.set_dbpath()
 
         output_dir = 'output files'
         
@@ -35,9 +38,10 @@ class Tracker:
         self.beliefNames = [None] * 69
         self.textlog = None
 
+    def set_dbpath(self):
+        self.dbpath = self.dbdir + "exported streaming info-1.db"
 
     def load_definitions(self, *args):
-        self.log("Loading definitions")
         with open("definitions-" + self.mod + ".json", "r") as json_file:
             definitions = json.load(json_file)
             for key,value in definitions["policy-trees"].iteritems():
@@ -92,6 +96,10 @@ class Tracker:
         with open("options.json", "r") as json_file:
             self.options = json.load(json_file)
         self.poll_delay = self.options["poll_delay"]
+        dbdir_override = self.options['dbdir-override']
+        if dbdir_override and len(dbdir_override) > 0:
+            self.dbdir = dbdir_override
+            self.set_dbpath()
 
     def save_options(self):
         self.options["mod-select"] = self.mod
@@ -128,9 +136,15 @@ class Tracker:
         #Radiobutton( self.root, text="No Quitters Mod", variable=self.mod_select_var, value="nqmod").pack(anchor=CENTER)
         #self.mod_select_var.trace("w", self.reload_mod())
 
-        self.load_definitions()
-
-        self.poll_database()
+        self.log("Loading definitions")
+        if os.path.isdir(self.dbdir):
+            try:
+                self.load_definitions()
+                self.poll_database()
+            except sqlite3.OperationalError:
+                self.log("ERROR: couldn't find the 'export info' database. You have to start a game of civ5 at least once with the Export Info Mod running, then restart this program.")
+        else:
+            self.log("ERROR: couldn't find civ5 user files at '" + self.dbdir + "'. Try editing options.json and putting the correct location of that directory into the 'dbdir-override' setting")
         mainloop()
 
     def poll_database(self):
@@ -165,7 +179,7 @@ class Tracker:
                     if name:
                         wonder_names.append(name)
         with open(self.wonders_file, "w") as f:
-            f.write(", ".join(wonder_names))
+            f.write(", ".join(wonder_names) + "  ")
 
         belief_names = []
         # sometimes there are two copies of a belief in there, so only show each once
@@ -181,7 +195,7 @@ class Tracker:
         if len(belief_names) == 0:
             belief_names.append("none")
         with open(self.religion_file, "w") as f:
-            f.write(", ".join(belief_names))
+            f.write(", ".join(belief_names) + "  ")
 
         # count how many policies are in each branch, so we get stuff like "Honor 0, Liberty 3"
         # its confusing because of the way the root is itself a policy but it doesnt have itself as a parent
@@ -211,7 +225,7 @@ class Tracker:
                 # its an ideology
                 policy_output.append(tree_root + " " + str(policy_tree_sizes[tree_root]))
         with open(self.policies_file, "w") as f:
-            f.write(", ".join(policy_output))
+            f.write(", ".join(policy_output) + "  ")
 
 
 

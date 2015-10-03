@@ -1,4 +1,5 @@
 {
+   "dbdir-override": "", 
    "mod-select": "bnw", 
    "poll_delay": 5000
 }
