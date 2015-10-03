@@ -9,3 +9,6 @@ build/
 .project
 .pydevproject
 .settings
+output files/pol.txt
+output files/rel.txt
+output files/wonders.txt
