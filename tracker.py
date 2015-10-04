@@ -178,6 +178,8 @@ class Tracker:
                     name = self.buildingNames[ID]
                     if name:
                         wonder_names.append(name)
+        if len(wonder_names) == 0:
+            wonder_names.append("none")
         with open(self.wonders_file, "w") as f:
             f.write(", ".join(wonder_names) + "  ")
 
@@ -224,6 +226,8 @@ class Tracker:
             else:
                 # its an ideology
                 policy_output.append(tree_root + " " + str(policy_tree_sizes[tree_root]))
+        if len(policy_output) == 0:
+            policy_output.append("none")
         with open(self.policies_file, "w") as f:
             f.write(", ".join(policy_output) + "  ")
 
