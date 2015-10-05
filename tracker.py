@@ -38,10 +38,13 @@ class Tracker:
         self.beliefNames = [None] * 69
         self.textlog = None
 
+        # gets created in load_options
+        self.each_thing_new_line = None
+
     def set_dbpath(self):
         self.dbpath = self.dbdir + "exported streaming info-1.db"
 
-    def load_definitions(self, *args):
+    def load_definitions(self):
         with open("definitions-" + self.mod + ".json", "r") as json_file:
             definitions = json.load(json_file)
             for key,value in definitions["policy-trees"].iteritems():
@@ -101,9 +104,10 @@ class Tracker:
             self.dbdir = dbdir_override
             self.set_dbpath()
 
+        self.each_thing_new_line = IntVar(name="each_thing_new_line", value=self.options.get("each_thing_new_line"))
+
     def save_options(self):
         self.options["mod-select"] = self.mod
-
         with open("options.json", "w") as json_file:
             json.dump(self.options, json_file, indent=3, sort_keys=True)
 
@@ -113,7 +117,10 @@ class Tracker:
             self.textlog.insert(END,msg + "\n")
             self.textlog.config(state=DISABLED)
 
-
+    def ui_option_change_listener(self, *args):
+        self.options["each_thing_new_line"] = self.each_thing_new_line.get()
+        self.save_options()
+        self.update_from_database()
 
     def run(self):
         self.root.wm_title("Civ 5 Tracker")
@@ -135,6 +142,11 @@ class Tracker:
         #Radiobutton( self.root, text="Vanilla Brave New World", variable=self.mod_select_var, value="bnw").pack(anchor=CENTER)
         #Radiobutton( self.root, text="No Quitters Mod", variable=self.mod_select_var, value="nqmod").pack(anchor=CENTER)
         #self.mod_select_var.trace("w", self.reload_mod())
+
+        Radiobutton( self.root, text="Use commas to separate things", variable=self.each_thing_new_line, value=0).pack(anchor=CENTER)
+        Radiobutton( self.root, text="Use new lines to separate things", variable=self.each_thing_new_line, value=1).pack(anchor=CENTER)
+        self.each_thing_new_line.trace("w", self.ui_option_change_listener)
+
 
         self.log("Loading definitions")
         if os.path.isdir(self.dbdir):
@@ -160,6 +172,13 @@ class Tracker:
             return
         self.log("turn " + str(turn))
         self.last_turn = turn
+        self.update_from_database(c)
+
+    def update_from_database(self, c=None):
+        if c is None:
+            conn = sqlite3.connect(self.dbpath)
+            c = conn.cursor()
+
         c.execute("SELECT Value FROM SimpleValues WHERE Name='buildings'")
         building_ids = c.fetchone()
 
@@ -169,6 +188,11 @@ class Tracker:
         c.execute("SELECT Value FROM SimpleValues WHERE Name='religion'")
         belief_ids = c.fetchone()
 
+
+        if self.each_thing_new_line.get() == 1:
+            separator = "\n"
+        else:
+            separator = ", "
 
         wonder_names = []
         if building_ids and building_ids[0]:
@@ -181,7 +205,7 @@ class Tracker:
         if len(wonder_names) == 0:
             wonder_names.append("none")
         with open(self.wonders_file, "w") as f:
-            f.write(", ".join(wonder_names) + "  ")
+            f.write(separator.join(wonder_names) + "  ")
 
         belief_names = []
         # sometimes there are two copies of a belief in there, so only show each once
@@ -197,7 +221,7 @@ class Tracker:
         if len(belief_names) == 0:
             belief_names.append("none")
         with open(self.religion_file, "w") as f:
-            f.write(", ".join(belief_names) + "  ")
+            f.write(separator.join(belief_names) + "  ")
 
         # count how many policies are in each branch, so we get stuff like "Honor 0, Liberty 3"
         # its confusing because of the way the root is itself a policy but it doesnt have itself as a parent
@@ -229,12 +253,7 @@ class Tracker:
         if len(policy_output) == 0:
             policy_output.append("none")
         with open(self.policies_file, "w") as f:
-            f.write(", ".join(policy_output) + "  ")
-
-
-
-
-
+            f.write(separator.join(policy_output) + "  ")
 
 
 
