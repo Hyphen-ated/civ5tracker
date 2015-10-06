@@ -1,4 +1,4 @@
-import json, atexit, sqlite3, os, subprocess
+import json, atexit, sqlite3, os, subprocess, psutil
 from Tkinter import *
 from sys import platform as _platform
 
@@ -37,7 +37,6 @@ class Tracker:
         self.wondersById = [False] * 162
         self.beliefNames = [None] * 69
         self.textlog = None
-        self.server_subprocess = None
 
         # gets created in load_options
         self.each_thing_new_line = None
@@ -112,10 +111,17 @@ class Tracker:
         with open("options.json", "w") as json_file:
             json.dump(self.options, json_file, indent=3, sort_keys=True)
 
+    def kill_children(self):
+        parent = psutil.Process(os.getpid())
+        children = parent.children(recursive=True)
+        for child in children:
+            child.kill()
+        psutil.wait_procs(children, timeout=5)
+
     def atexit(self):
         self.save_options()
-        if self.server_subprocess:
-            self.server_subprocess.kill()
+        self.kill_children()
+
     def log(self, msg):
         if self.textlog:
             self.textlog.config(state=NORMAL)
@@ -154,10 +160,10 @@ class Tracker:
             self.log("Starting integrated server from .exe")
             with open("serverlog.txt", "w") as serverlog:
 
-                self.server_subprocess = subprocess.Popen('"../server/civ5_tracker_webserver.exe"',shell=True,cwd=os.path.join(os.getcwd(), "output files"),stdout=serverlog, stderr=serverlog)
+                subprocess.Popen('"../server/civ5_tracker_webserver.exe"',shell=True,cwd=os.path.join(os.getcwd(), "output files"),stdout=serverlog, stderr=serverlog)
         elif os.path.isfile("civ5_tracker_webserver.py"):
             self.log("Starting integrated server from .py")
-            self.server_subprocess = subprocess.Popen("python ../civ5_tracker_webserver.py",shell=True,cwd=os.path.join(os.getcwd(), "output files"))
+            subprocess.Popen("python ../civ5_tracker_webserver.py",shell=True,cwd=os.path.join(os.getcwd(), "output files"))
         else:
             self.log("No integrated server found! (CLR browser won't work)")
 
