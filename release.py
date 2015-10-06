@@ -16,11 +16,20 @@ setup(
     windows = [{'script': "tracker.py"}],
     zipfile = None,
 )
+shutil.copytree('dist/', installDir + "dist/")
+
+setup(
+    options = {'py2exe': {'bundle_files': 3, 'compressed': True}},
+    windows = [{'script': "civ5_tracker_webserver.py"}],
+    zipfile = None,
+)
+shutil.copytree('dist/', installDir + "server/")
+
 
 
 shutil.copytree('output files reference/', installDir + 'output files/')
 
-shutil.copytree('dist/', installDir + "dist/")
+
 shutil.copy('shortcut.lnk', installDir + "Run Civ 5 Tracker.lnk")
 shutil.copy('options.json', installDir)
 shutil.copy('definitions-bnw.json', installDir)

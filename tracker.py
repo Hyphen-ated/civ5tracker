@@ -1,4 +1,4 @@
-import json, atexit, sqlite3, os
+import json, atexit, sqlite3, os, subprocess
 from Tkinter import *
 from sys import platform as _platform
 
@@ -37,6 +37,7 @@ class Tracker:
         self.wondersById = [False] * 162
         self.beliefNames = [None] * 69
         self.textlog = None
+        self.server_subprocess = None
 
         # gets created in load_options
         self.each_thing_new_line = None
@@ -111,6 +112,10 @@ class Tracker:
         with open("options.json", "w") as json_file:
             json.dump(self.options, json_file, indent=3, sort_keys=True)
 
+    def atexit(self):
+        self.save_options()
+        if self.server_subprocess:
+            self.server_subprocess.kill()
     def log(self, msg):
         if self.textlog:
             self.textlog.config(state=NORMAL)
@@ -127,9 +132,7 @@ class Tracker:
         self.root.resizable(False, False)
 
         self.load_options()
-        atexit.register(self.save_options)
-
-
+        atexit.register(self.atexit)
 
         scroll = Scrollbar(self.root)
         self.textlog = Text(self.root, height=8, width=80, state=DISABLED)
@@ -147,6 +150,16 @@ class Tracker:
         Radiobutton( self.root, text="Use new lines to separate things", variable=self.each_thing_new_line, value=1).pack(anchor=CENTER)
         self.each_thing_new_line.trace("w", self.ui_option_change_listener)
 
+        if os.path.isfile("server/civ5_tracker_webserver.exe"):
+            self.log("Starting integrated server from .exe")
+            with open("serverlog.txt", "w") as serverlog:
+
+                self.server_subprocess = subprocess.Popen('"../server/civ5_tracker_webserver.exe"',shell=True,cwd=os.path.join(os.getcwd(), "output files"),stdout=serverlog, stderr=serverlog)
+        elif os.path.isfile("civ5_tracker_webserver.py"):
+            self.log("Starting integrated server from .py")
+            self.server_subprocess = subprocess.Popen("python ../civ5_tracker_webserver.py",shell=True,cwd=os.path.join(os.getcwd(), "output files"))
+        else:
+            self.log("No integrated server found! (CLR browser won't work)")
 
         self.log("Loading definitions")
         if os.path.isdir(self.dbdir):
@@ -205,7 +218,8 @@ class Tracker:
         if len(wonder_names) == 0:
             wonder_names.append("none")
         with open(self.wonders_file, "w") as f:
-            f.write(separator.join(wonder_names) + "  ")
+            wonder_output = separator.join(wonder_names) + "  "
+            f.write(wonder_output)
 
         belief_names = []
         # sometimes there are two copies of a belief in there, so only show each once
@@ -221,7 +235,8 @@ class Tracker:
         if len(belief_names) == 0:
             belief_names.append("none")
         with open(self.religion_file, "w") as f:
-            f.write(separator.join(belief_names) + "  ")
+            belief_output = separator.join(belief_names) + "  "
+            f.write(belief_output)
 
         # count how many policies are in each branch, so we get stuff like "Honor 0, Liberty 3"
         # its confusing because of the way the root is itself a policy but it doesnt have itself as a parent
@@ -243,18 +258,24 @@ class Tracker:
 
 
 
-        policy_output = []
+        policy_entries = []
         for tree_root in policy_tree_sizes:
             if str(tree_root).isdigit():
-                policy_output.append(self.policyNames[int(tree_root)] + " " + str(policy_tree_sizes[tree_root]))
+                policy_entries.append(self.policyNames[int(tree_root)] + " " + str(policy_tree_sizes[tree_root]))
             else:
                 # its an ideology
-                policy_output.append(tree_root + " " + str(policy_tree_sizes[tree_root]))
-        if len(policy_output) == 0:
-            policy_output.append("none")
+                policy_entries.append(tree_root + " " + str(policy_tree_sizes[tree_root]))
+        if len(policy_entries) == 0:
+            policy_entries.append("none")
         with open(self.policies_file, "w") as f:
-            f.write(separator.join(policy_output) + "  ")
+            policy_output = separator.join(policy_entries) + "  "
+            f.write(policy_output)
 
+        with open("output files/template.html", "r") as template:
+            data = template.read()
+            data = data.replace("%pol%", policy_output).replace("%rel%", belief_output).replace("%wonders%", wonder_output)
+            with open("output files/sidebar.html", "w") as sidebarhtml:
+                sidebarhtml.write(data)
 
 
 track = Tracker()
